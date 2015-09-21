@@ -1,0 +1,124 @@
+<html>
+	<head>
+		<meta charset="UTF-8"> 
+		<style>
+		html, body {
+            width: 100%;
+            height: 100%
+			background: #BB8;
+            margin: 0;
+		}
+        canvas {
+            width: 100%;
+            height: 100%;
+            background-color: #EEE;
+        }
+		</style>
+	</head>
+	<body>
+        <canvas></canvas>
+		<script>
+"use strict";
+
+var canvas = document.getElementsByTagName('canvas')[0]
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+var context = canvas.getContext('2d');
+
+var palette = {
+    'default': {background: '#88B'},
+    'correct': {background: '#8B8'},
+    'incorrect': {background: '#B88'},
+}
+
+function Cell(value, paletteIndex, active) {
+    return {
+        value: value,
+        paletteIndex: paletteIndex,
+        active: active,
+    }
+}
+
+var m, a, m2;
+var board;
+function buildBoard(newM) {
+    m = newM;
+    m2 = 2 * m - 2;
+    board = [];
+    for (var i = 0; i <= m2; i++) {
+        var line = [];
+        board.push(line);
+        for (var j = 0; j <= m2; j++) {
+            line.push(Cell('', 'default', 0));
+        }
+    }
+}
+
+function render() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    var cellSpace = 20;
+    var cellPadding = 1;
+    var cellBorder = 4;
+    var cellSize = cellSpace - cellPadding * 2;
+    var topPadding = 50;
+    function cellY(row) { return topPadding + row * cellSpace + cellPadding; }
+    function cellX(col) { return (canvas.width/2 - (m2/2-col)*cellSpace + cellPadding)|0; }
+    //function rowY(y) { return Math.round((y - cellPadding - topPadding) / cellSpace); }
+    //function colX(x) { return Math.round(y - canvas.width/2); }
+
+    context.save();
+    context.font = '16px Verdana';
+    for (var i = 0; i < m; i++) {
+
+    }
+    context.restore();
+
+    context.save();
+    for (var i = 0; i <= m2; i++) {
+        for (var j = 0; j <= m2; j++) {
+            var cell = board[i][j];
+            context.fillStyle = palette[cell.paletteIndex].background;
+            context.globalAlpha = cell.active ? 1 : 0.3;
+            context.fillRect(cellX(j), cellY(i),
+                             cellSize, cellSize);
+            context.fillStyle = '#333';
+            context.fillRect(cellX(j)+cellBorder, cellY(i)+cellBorder,
+                             cellSize-cellBorder*2, cellSize-cellBorder*2);
+        }
+    }
+    context.restore();
+}
+
+function update() {
+    render();
+    window.requestAnimationFrame(update);
+}
+//update();
+
+function buildAnswer() {
+    for (var row = 0; row <= m2; row++) {
+        for (var col = 0; col <= m2; col++) {
+            var xored0 = row - m >= col && (row - col - m) % (m - a) == 0;
+            var xoredA = col >= a && (a + row - col - m) % (m - a) == 0;
+            var isCorrect = row >= col && (row == col || (row >= m && xoredA ^ xored0));
+            board[row][col].active = isCorrect;
+            board[row][col].paletteIndex = isCorrect ? 'correct' : 'incorrect';
+        }
+    }
+}
+
+buildBoard(22);
+a = 1;
+buildAnswer();
+render();
+canvas.onclick = function(e) {
+
+}
+canvas.onmove = function(e) {
+
+}
+setInterval(function() { console.log(a); a = (a + 1) % m; buildAnswer(); render(); }, 1000);
+		</script>
+	</body>
+</html>
