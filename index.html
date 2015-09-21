@@ -25,13 +25,13 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 var context = canvas.getContext('2d');
 
-function Cell(value, correct, primarySelection, secondarySelection, active) {
+function Cell(correct, active, primarySelection, secondarySelection, secondaryActive) {
     return {
-        value: value,
         correct: correct,
+        active: active,
         primarySelection: primarySelection,
         secondarySelection: secondarySelection,
-        active: active,
+        secondaryActive: secondaryActive,
     }
 }
 
@@ -45,7 +45,7 @@ function buildBoard(newM) {
         var line = [];
         board.push(line);
         for (var j = 0; j <= m2; j++) {
-            line.push(Cell('', false, false, false, 0));
+            line.push(Cell(false, false, false, false, false));
         }
     }
 }
@@ -93,6 +93,7 @@ function render() {
 
             if (cell.secondarySelection) {
                 context.fillStyle = '#FFF';
+                context.globalAlpha = cell.secondaryActive ? 1 : 0.3;
                 context.beginPath();
                 context.moveTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellSize-cellBorder);
                 context.lineTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellBorder);
@@ -119,12 +120,6 @@ function buildAnswer() {
 buildBoard(10);
 a = 1;
 buildAnswer();
-
-function xorCols(dst, src) {
-    for (var row = 0; row <= m2; row++) {
-        board[row][dst].active ^= board[row][src].active;
-    }
-}
 
 var selecting = false;
 var selectionStart = -1;
@@ -154,6 +149,9 @@ function updateSelectionStatus() {
                 board[row][col].primarySelection = inRange;
             } else if (selectionType == 'secondary') {
                 board[row][col].secondarySelection = inRange;
+                var distance = col - start;
+                var src = Math.min(selectionStart, selectionEnd) + distance;
+                board[row][col].secondaryActive = (src >= 0 && src <= m2) && board[row][src].active;
             } else {
                 board[row][col].primarySelection = false;
                 board[row][col].secondarySelection = false;
@@ -168,7 +166,16 @@ canvas.onmousedown = function(e) {
         selectionStart = col;
         selectionEnd = col;
     } else {
-        xorCols(col, selectionStart);
+        updateSelectionStatus();
+        for (var i = 0; i <= Math.abs(selectionEnd - selectionStart); i++) {
+            var col = secondarySelectionStart + i;
+            if (col < 0 || col > m2) {
+                continue;
+            }
+            for (var row = 0; row <= m2; row++) {
+                board[row][col].active ^= board[row][col].secondaryActive;
+            }
+        }
         selecting = false;
         selectionStart = -1;
         selectionEnd = -1;
