@@ -25,16 +25,12 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 var context = canvas.getContext('2d');
 
-var palette = {
-    'default': {background: '#88B'},
-    'correct': {background: '#8B8'},
-    'incorrect': {background: '#B88'},
-}
-
-function Cell(value, paletteIndex, active) {
+function Cell(value, correct, primarySelection, secondarySelection, active) {
     return {
         value: value,
-        paletteIndex: paletteIndex,
+        correct: correct,
+        primarySelection: primarySelection,
+        secondarySelection: secondarySelection,
         active: active,
     }
 }
@@ -49,23 +45,23 @@ function buildBoard(newM) {
         var line = [];
         board.push(line);
         for (var j = 0; j <= m2; j++) {
-            line.push(Cell('', 'default', 0));
+            line.push(Cell('', false, false, false, 0));
         }
     }
 }
 
+var cellSpace = 30;
+var cellPadding = 1;
+var cellBorder = 4;
+var cellSize = cellSpace - cellPadding * 2;
+var topPadding = 50;
+function cellY(row) { return topPadding + row * cellSpace + cellPadding; }
+function cellX(col) { return (canvas.width/2 - (m2/2-col)*cellSpace + cellPadding)|0; }
+function rowY(y) { return Math.round((y - topPadding) / cellSpace - 0.5); }
+function colX(x) { return Math.round((x - canvas.width/2) / cellSpace + m2/2 - 0.5); }
+
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
-
-    var cellSpace = 20;
-    var cellPadding = 1;
-    var cellBorder = 4;
-    var cellSize = cellSpace - cellPadding * 2;
-    var topPadding = 50;
-    function cellY(row) { return topPadding + row * cellSpace + cellPadding; }
-    function cellX(col) { return (canvas.width/2 - (m2/2-col)*cellSpace + cellPadding)|0; }
-    //function rowY(y) { return Math.round((y - cellPadding - topPadding) / cellSpace); }
-    //function colX(x) { return Math.round(y - canvas.width/2); }
 
     context.save();
     context.font = '16px Verdana';
@@ -78,23 +74,35 @@ function render() {
     for (var i = 0; i <= m2; i++) {
         for (var j = 0; j <= m2; j++) {
             var cell = board[i][j];
-            context.fillStyle = palette[cell.paletteIndex].background;
+            context.fillStyle = cell.correct ? '#8B8' : '#B88';
             context.globalAlpha = cell.active ? 1 : 0.3;
             context.fillRect(cellX(j), cellY(i),
                              cellSize, cellSize);
             context.fillStyle = '#333';
             context.fillRect(cellX(j)+cellBorder, cellY(i)+cellBorder,
                              cellSize-cellBorder*2, cellSize-cellBorder*2);
+
+            if (cell.primarySelection) {
+                context.fillStyle = '#FFF';
+                context.beginPath();
+                context.moveTo(cellX(j)+cellBorder, cellY(i)+cellBorder);
+                context.lineTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellBorder);
+                context.lineTo(cellX(j)+cellBorder, cellY(i)+cellSize-cellBorder);
+                context.fill();
+            }
+
+            if (cell.secondarySelection) {
+                context.fillStyle = '#FFF';
+                context.beginPath();
+                context.moveTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellSize-cellBorder);
+                context.lineTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellBorder);
+                context.lineTo(cellX(j)+cellBorder, cellY(i)+cellSize-cellBorder);
+                context.fill();
+            }
         }
     }
     context.restore();
 }
-
-function update() {
-    render();
-    window.requestAnimationFrame(update);
-}
-//update();
 
 function buildAnswer() {
     for (var row = 0; row <= m2; row++) {
@@ -102,23 +110,90 @@ function buildAnswer() {
             var xored0 = row - m >= col && (row - col - m) % (m - a) == 0;
             var xoredA = col >= a && (a + row - col - m) % (m - a) == 0;
             var isCorrect = row >= col && (row == col || (row >= m && xoredA ^ xored0));
-            board[row][col].active = isCorrect;
-            board[row][col].paletteIndex = isCorrect ? 'correct' : 'incorrect';
+            board[row][col].correct = isCorrect;
+            board[row][col].active = row == col;
         }
     }
 }
 
-buildBoard(22);
+buildBoard(10);
 a = 1;
 buildAnswer();
-render();
-canvas.onclick = function(e) {
 
+function xorCols(dst, src) {
+    for (var row = 0; row <= m2; row++) {
+        board[row][dst].active ^= board[row][src].active;
+    }
 }
-canvas.onmove = function(e) {
 
+var selecting = false;
+var selectionStart = -1;
+var selectionEnd = -1;
+var secondarySelectionStart = -1;
+
+function updateSelectionStatus() {
+    var selectionType;
+
+    var start, end;
+    if (selecting) {
+        selectionType = 'primary';
+        start = Math.min(selectionStart, selectionEnd);
+        end = Math.max(selectionStart, selectionEnd);
+    } else if (selectionStart !== -1) {
+        selectionType = 'secondary';
+        start = secondarySelectionStart;
+        end = start + Math.abs(selectionStart - selectionEnd);
+    } else {
+        selectionType = 'none';
+    }
+
+    for (var row = 0; row <= m2; row++) {
+        for (var col = 0; col <= m2; col++) {
+            var inRange = col >= start && col <= end;
+            if (selectionType == 'primary') {
+                board[row][col].primarySelection = inRange;
+            } else if (selectionType == 'secondary') {
+                board[row][col].secondarySelection = inRange;
+            } else {
+                board[row][col].primarySelection = false;
+                board[row][col].secondarySelection = false;
+            }
+        }
+    }
 }
-setInterval(function() { console.log(a); a = (a + 1) % m; buildAnswer(); render(); }, 1000);
+canvas.onmousedown = function(e) {
+    var col = colX(e.clientX);
+    if (selectionStart === -1) {
+        selecting = true;
+        selectionStart = col;
+        selectionEnd = col;
+    } else {
+        xorCols(col, selectionStart);
+        selecting = false;
+        selectionStart = -1;
+        selectionEnd = -1;
+    }
+    updateSelectionStatus();
+}
+canvas.onmouseup = function(e) {
+    selecting = false;
+    selectionEnd = colX(e.clientX);
+    secondarySelectionStart = colX(e.clientX);
+    updateSelectionStatus();
+}
+canvas.onmousemove = function(e) {
+    if (selecting) {
+        selectionEnd = colX(e.clientX);
+        updateSelectionStatus();
+    } else if (selectionStart !== -1) {
+        secondarySelectionStart = colX(e.clientX);
+        updateSelectionStatus();
+    }
+}
+//setInterval(function() { a = (a + 1) % m; buildAnswer(); render(); }, 1000);
+
+function update() { render(); window.requestAnimationFrame(update); }
+update();
 		</script>
 	</body>
 </html>
