@@ -115,8 +115,10 @@ function render() {
 
     context.save();
     context.fillStyle = '#426687';
-    context.fillRect(cellX(selectionCurrent), 0, cellSpace, canvas.height);
-    context.fillRect(0, cellY(selectionCurrentRow), canvas.width, cellSpace);
+    if (selectionCurrent >= 0 && selectionCurrent <= m2 && selectionCurrentRow >= 0 && selectionCurrentRow <= m2) {
+        context.fillRect(cellX(selectionCurrent), 0, cellSpace, canvas.height);
+        context.fillRect(0, cellY(selectionCurrentRow), canvas.width, cellSpace);
+    }
     context.restore();
 
     context.save();
