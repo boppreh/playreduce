@@ -27,15 +27,6 @@
 var canvas = document.getElementsByTagName('canvas')[0]
 var context = canvas.getContext('2d');
 
-function Cell(active, primarySelection, secondarySelection, secondaryActive) {
-    return {
-        active: active,
-        primarySelection: primarySelection,
-        secondarySelection: secondarySelection,
-        secondaryActive: secondaryActive,
-    }
-}
-
 var m, a, m2;
 var board;
 function buildBoard() {
@@ -49,7 +40,7 @@ function buildBoard() {
         var line = [];
         board.push(line);
         for (var j = 0; j <= m2; j++) {
-            line.push(Cell(i == j, false, false, false, false));
+            line.push(i == j);
         }
     }
 
@@ -88,13 +79,13 @@ function isCorrect(row, col) {
 function drawCell(row, col) {
     var correct = isCorrect(row, col);
     var cell = board[row][col];
-    if (!correct && !cell.active) {
+    if (!correct && !cell) {
         return;
     }
 
     if (correct) {
-        context.fillStyle = cell.active ? '#33DD33' : '#459990';
-    } else if (cell.active) {
+        context.fillStyle = cell ? '#33DD33' : '#459990';
+    } else if (cell) {
         context.fillStyle = '#CC3333';
     }
     context.fillRect(cellX(col) + cellPadding, cellY(row),
@@ -116,7 +107,7 @@ function isBetween(value, rangeStart, rangeEnd) {
 
 function isSrcActive(row, col) {
     var srcCol = (col - selectionCurrent) + Math.min(selectionStart, selectionEnd);
-    return srcCol >= 0 && srcCol <= m2 && board[row][srcCol].active
+    return srcCol >= 0 && srcCol <= m2 && board[row][srcCol]
 }
 
 function render() {
@@ -143,7 +134,7 @@ function render() {
                 if ((selectionEnd === -1 && isBetween(col, selectionStart, selectionCurrent)) ||
                     (selectionEnd >= 0 && isBetween(col, selectionStart, selectionEnd))) {
                     context.fillStyle = '#EEE';
-                    context.globalAlpha = cell.active ? 1 : 0.2;
+                    context.globalAlpha = cell ? 1 : 0.2;
                     context.beginPath();
                     context.moveTo(x+cellBorder+cellPadding, y+cellBorder);
                     context.lineTo(x+cellSize-cellBorder+cellPadding, y+cellBorder);
@@ -197,7 +188,7 @@ function testVictory() {
     for (var row = 0; row <= m2; row++) {
         for (var col = 0; col <= m2; col++) {
             var cell = board[row][col];
-            if (cell.active != isCorrect(row, col)) {
+            if (cell != isCorrect(row, col)) {
                 return;
             }
         }
@@ -225,7 +216,7 @@ canvas.onmousedown = function(e) {
             if (col >= 0 && col <= m2) {
                 changed++;
                 for (var row = 0; row <= m2; row++) {
-                    board[row][col].active ^= isSrcActive(row, col);
+                    board[row][col] ^= isSrcActive(row, col);
                 }
             }
         }
