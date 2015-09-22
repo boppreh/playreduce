@@ -129,6 +129,12 @@ function render() {
     context.restore();
 
     context.save();
+    context.fillStyle = '#426687';
+    context.fillRect(cellX(selectionCurrent), 0, cellSpace, canvas.height);
+    context.fillRect(0, cellY(selectionCurrentRow), canvas.width, cellSpace);
+    context.restore();
+
+    context.save();
     var start = Math.min(selectionStart, selectionEnd);
     var end = Math.max(selectionStart, selectionEnd);
     for (var row = 0; row <= m2; row++) {
@@ -178,6 +184,7 @@ buildBoard();
 var selectionStart = -1;
 var selectionEnd = -1;
 var selectionCurrent = -1;
+var selectionCurrentRow = -1;
 
 function testVictory() {
     for (var row = 0; row <= m2; row++) {
@@ -205,7 +212,7 @@ canvas.onmousedown = function(e) {
         if (start == selectionCurrent) {
             return;
         }
-        var end = Math.min(selectionStart, selectionEnd);
+        var end = Math.max(selectionStart, selectionEnd);
         for (var col = selectionCurrent; col <= selectionCurrent + (end - start); col++) {
             if (col >= 0 && col <= m2) {
                 for (var row = 0; row <= m2; row++) {
@@ -227,6 +234,7 @@ canvas.onmouseup = function(e) {
 };
 canvas.onmousemove = function(e) {
     selectionCurrent = colX(e.clientX);
+    selectionCurrentRow = rowY(e.clientY);
 };
 canvas.onwheel = function(e) {
     if (e.shiftKey) {
