@@ -118,13 +118,15 @@ function render() {
             drawCell(i, j);
 
             var cell = board[i][j];
+            var x = cellX(j);
+            var y = cellY(i);
             if (cell.primarySelection) {
                 context.fillStyle = '#EEE';
                 context.globalAlpha = cell.active ? 1 : 0.2;
                 context.beginPath();
-                context.moveTo(cellX(j)+cellBorder, cellY(i)+cellBorder);
-                context.lineTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellBorder);
-                context.lineTo(cellX(j)+cellBorder, cellY(i)+cellSize-cellBorder);
+                context.moveTo(x+cellBorder+cellPadding, y+cellBorder);
+                context.lineTo(x+cellSize-cellBorder+cellPadding, y+cellBorder);
+                context.lineTo(x+cellBorder+cellPadding, y+cellSize-cellBorder);
                 context.fill();
             }
 
@@ -132,9 +134,9 @@ function render() {
                 context.fillStyle = '#EEE';
                 context.globalAlpha = cell.secondaryActive ? 0.9 : 0.1;
                 context.beginPath();
-                context.moveTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellSize-cellBorder);
-                context.lineTo(cellX(j)+cellSize-cellBorder, cellY(i)+cellBorder);
-                context.lineTo(cellX(j)+cellBorder, cellY(i)+cellSize-cellBorder);
+                context.moveTo(x+cellPadding+cellSize-cellBorder, y+cellSize-cellBorder);
+                context.lineTo(x+cellPadding+cellSize-cellBorder, y+cellBorder);
+                context.lineTo(x+cellPadding+cellBorder, y+cellSize-cellBorder);
                 context.fill();
             }
         }
