@@ -256,9 +256,9 @@ canvas.onwheel = function(e) {
     return false;
 };
 canvas.oncontextmenu = function(e) {
-    selecting = false;
     selectionStart = null;
     selectionEnd = null;
+    selectionCurrent = null;
     return false;
 };
 window.onkeydown = function(e) {
