@@ -98,6 +98,9 @@ function drawCell(row, col) {
 }
 
 function isBetween(value, rangeStart, rangeEnd) {
+    if (value === null || rangeStart === null || rangeEnd === null) {
+        return false;
+    }
     if (rangeEnd < rangeStart) {
         return isBetween(value, rangeEnd, rangeStart);
     } else {
@@ -133,8 +136,8 @@ function render() {
             var x = cellX(col);
             var y = cellY(row);
             if (selectionStart !== -1) {
-                if ((selectionEnd === -1 && isBetween(col, selectionStart, selectionCurrent)) ||
-                    (selectionEnd >= 0 && isBetween(col, selectionStart, selectionEnd))) {
+                if ((selectionEnd === null && isBetween(col, selectionStart, selectionCurrent)) ||
+                    (selectionEnd !== null && isBetween(col, selectionStart, selectionEnd))) {
                     context.fillStyle = '#EEE';
                     context.globalAlpha = cell ? 1 : 0.2;
                     context.beginPath();
@@ -143,7 +146,7 @@ function render() {
                     context.lineTo(x+cellBorder+cellPadding, y+cellSize-cellBorder);
                     context.fill();
                 }
-                if (selectionEnd >= 0 && isBetween(col, selectionCurrent, selectionCurrent + Math.abs(selectionEnd - selectionStart))) {
+                if (selectionEnd !== null && isBetween(col, selectionCurrent, selectionCurrent + Math.abs(selectionEnd - selectionStart))) {
                     context.fillStyle = '#EEE';
                     context.globalAlpha = isSrcActive(row, col) ? 0.9 : 0.1;
                     context.beginPath();
@@ -179,10 +182,10 @@ if (urlParam) {
 }
 buildBoard();
 
-var selectionStart = -1;
-var selectionEnd = -1;
-var selectionCurrent = -1;
-var selectionCurrentRow = -1;
+var selectionStart = null;
+var selectionEnd = null;
+var selectionCurrent = null;
+var selectionCurrentRow = null;
 var bitCount = 0;
 var rangeCount = 0;
 
@@ -205,7 +208,7 @@ canvas.onmousedown = function(e) {
     }
      
     var col = colX(e.clientX);
-    if (selectionStart === -1 && selectionCurrent >= 0 && selectionCurrent <= m2) {
+    if (selectionStart === null && selectionCurrent >= 0 && selectionCurrent <= m2) {
         selectionStart = col;
     } else {
         var start = Math.min(selectionStart, selectionEnd);
@@ -227,14 +230,14 @@ canvas.onmousedown = function(e) {
             rangeCount += 1;
         }
         if (!e.shiftKey) {
-            selectionStart = -1;
-            selectionEnd = -1;
+            selectionStart = null;
+            selectionEnd = null;
         }
         setTimeout(testVictory, 1000)
     }
 };
 canvas.onmouseup = function(e) {
-    if (selectionStart !== -1 && selectionEnd === -1) {
+    if (selectionStart !== null && selectionEnd === null) {
         selectionEnd = Math.min(m2, Math.max(0, selectionCurrent));
     }
 };
@@ -254,10 +257,27 @@ canvas.onwheel = function(e) {
 };
 canvas.oncontextmenu = function(e) {
     selecting = false;
-    selectionStart = -1;
-    selectionEnd = -1;
+    selectionStart = null;
+    selectionEnd = null;
     return false;
 };
+window.onkeydown = function(e) {
+    var direction = {37: -1, 39: 1}[e.keyCode];
+    if (direction !== undefined) {
+        if (selectionStart === null) {
+            selectionStart = selectionCurrent;
+        }
+        selectionStart += direction;
+        if (!e.shiftKey) {
+            selectionEnd = selectionStart;
+        }
+        selectionCurrent = null;
+    }
+    if (e.keyCode == 27) {
+        selectionStart = null;
+        selectionEnd = null;
+    }
+}
 
 function update() { render(); window.requestAnimationFrame(update); }
 update();
