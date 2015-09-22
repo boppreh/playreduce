@@ -30,7 +30,7 @@ var context = canvas.getContext('2d');
 var m, a, m2;
 var board;
 function buildBoard() {
-    selectionStart = selectionEnd = selectionCurrent = selectionCurrentRow = -1;
+    selectionStart = selectionEnd = selectionCurrent = selectionCurrentRow = null;
     bitCount = rangeCount = 0;
     m = Math.max(2, Math.min(100, m));
     a = Math.max(1, Math.min(m-1, a));
@@ -135,7 +135,7 @@ function render() {
             var cell = board[row][col];
             var x = cellX(col);
             var y = cellY(row);
-            if (selectionStart !== -1) {
+            if (selectionStart !== null) {
                 if ((selectionEnd === null && isBetween(col, selectionStart, selectionCurrent)) ||
                     (selectionEnd !== null && isBetween(col, selectionStart, selectionEnd))) {
                     context.fillStyle = '#EEE';
@@ -182,12 +182,12 @@ if (urlParam) {
 }
 buildBoard();
 
-var selectionStart = null;
-var selectionEnd = null;
-var selectionCurrent = null;
-var selectionCurrentRow = null;
-var bitCount = 0;
-var rangeCount = 0;
+var selectionStart;
+var selectionEnd;
+var selectionCurrent;
+var selectionCurrentRow;
+var bitCount;
+var rangeCount;
 
 function testVictory() {
     for (var row = 0; row <= m2; row++) {
