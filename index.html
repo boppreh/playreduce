@@ -39,6 +39,8 @@ function Cell(active, primarySelection, secondarySelection, secondaryActive) {
 var m, a, m2;
 var board;
 function buildBoard() {
+    selectionStart = selectionEnd = selectionCurrent = selectionCurrentRow = -1;
+    bitCount = rangeCount = 0;
     m = Math.max(2, Math.min(100, m));
     a = Math.max(1, Math.min(m-1, a));
     m2 = 2 * m - 2;
