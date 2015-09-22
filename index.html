@@ -61,7 +61,11 @@ function updateDimensions() {
 
     canvasPadding = canvas.height / 20;
     cellSpace = ((Math.min(canvas.width, canvas.height) - 2 * canvasPadding) / (m2+1))|0;
-    cellPadding = Math.max(1, (cellSpace / 20)|0);
+    if (cellSpace > 10) {
+        cellPadding = Math.max(1, (cellSpace / 20)|0);
+    } else {
+        cellPadding = 0;
+    }
     cellBorder = (cellSpace / 5)|0;
     cellSize = cellSpace - cellPadding * 2;
 
