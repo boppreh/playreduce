@@ -205,7 +205,7 @@ canvas.onmousedown = function(e) {
     }
      
     var col = colX(e.clientX);
-    if (selectionStart === -1) {
+    if (selectionStart === -1 && selectionCurrent >= 0 && selectionCurrent <= m2) {
         selectionStart = col;
     } else {
         var start = Math.min(selectionStart, selectionEnd);
@@ -235,7 +235,7 @@ canvas.onmousedown = function(e) {
 };
 canvas.onmouseup = function(e) {
     if (selectionStart !== -1 && selectionEnd === -1) {
-        selectionEnd = selectionCurrent;
+        selectionEnd = Math.min(m2, Math.max(0, selectionCurrent));
     }
 };
 canvas.onmousemove = function(e) {
