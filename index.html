@@ -121,14 +121,6 @@ function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     context.save();
-    context.fillStyle = '#CCC';
-    context.font = '16px Verdana';
-    context.textAlign = 'right';
-    context.fillText("m="+m, canvas.width - 10, canvas.height - 30);
-    context.fillText("a="+a, canvas.width - 10, canvas.height - 10);
-    context.restore();
-
-    context.save();
     context.fillStyle = '#426687';
     context.fillRect(cellX(selectionCurrent), 0, cellSpace, canvas.height);
     context.fillRect(0, cellY(selectionCurrentRow), canvas.width, cellSpace);
@@ -169,6 +161,17 @@ function render() {
         }
     }
     context.restore();
+
+    context.save();
+    context.fillStyle = '#CCC';
+    context.font = '16px Verdana';
+    context.textAlign = 'right';
+    context.fillText("m="+m, canvas.width - 10, canvas.height - 30);
+    context.fillText("a="+a, canvas.width - 10, canvas.height - 10);
+    context.textAlign = 'left';
+    context.fillText("bit count="+bitCount, 10, canvas.height - 30);
+    context.fillText("range count="+rangeCount, 10, canvas.height - 10);
+    context.restore();
 }
 
 var urlParam = window.location.hash.slice(1);
@@ -185,6 +188,8 @@ var selectionStart = -1;
 var selectionEnd = -1;
 var selectionCurrent = -1;
 var selectionCurrentRow = -1;
+var bitCount = 0;
+var rangeCount = 0;
 
 function testVictory() {
     for (var row = 0; row <= m2; row++) {
@@ -209,16 +214,22 @@ canvas.onmousedown = function(e) {
         selectionStart = col;
     } else {
         var start = Math.min(selectionStart, selectionEnd);
+        var end = Math.max(selectionStart, selectionEnd);
         if (start == selectionCurrent) {
             return;
         }
-        var end = Math.max(selectionStart, selectionEnd);
+        var changed = 0;
         for (var col = selectionCurrent; col <= selectionCurrent + (end - start); col++) {
             if (col >= 0 && col <= m2) {
+                changed++;
                 for (var row = 0; row <= m2; row++) {
                     board[row][col].active ^= isSrcActive(row, col);
                 }
             }
+        }
+        if (changed) {
+            bitCount += changed;
+            rangeCount += 1;
         }
         if (!e.shiftKey) {
             selectionStart = -1;
