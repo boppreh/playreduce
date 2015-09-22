@@ -221,7 +221,6 @@ canvas.onmousedown = function(e) {
         selectionStart = col;
         selectionEnd = col;
     } else if (selectionStart != col && selectionEnd != col) {
-        updateSelectionStatus();
         for (var i = 0; i <= Math.abs(selectionEnd - selectionStart); i++) {
             var col = secondarySelectionStart + i;
             if (col < 0 || col > m2) {
@@ -237,7 +236,6 @@ canvas.onmousedown = function(e) {
             selectionEnd = -1;
         }
     }
-    updateSelectionStatus();
     setTimeout(testVictory, 1000)
 };
 canvas.onmouseup = function(e) {
@@ -245,16 +243,13 @@ canvas.onmouseup = function(e) {
         selecting = false;
         selectionEnd = colX(e.clientX);
         secondarySelectionStart = colX(e.clientX);
-        updateSelectionStatus();
     }
 };
 canvas.onmousemove = function(e) {
     if (selecting) {
         selectionEnd = colX(e.clientX);
-        updateSelectionStatus();
     } else if (selectionStart !== -1) {
         secondarySelectionStart = colX(e.clientX);
-        updateSelectionStatus();
     }
 };
 canvas.onwheel = function(e) {
@@ -262,10 +257,8 @@ canvas.onwheel = function(e) {
         m = Math.max(2, Math.min(100, m + (e.deltaY < 0 ? 1 : -1)));
         a = Math.max(1, Math.min(m - 1, a));
         buildBoard();
-        updateDimensions();
     } else {
         a = Math.max(1, Math.min(m - 1, a + (e.deltaY < 0 ? 1 : -1)));
-        updateDimensions();
     }
     return false;
 };
@@ -273,12 +266,11 @@ canvas.oncontextmenu = function(e) {
     selecting = false;
     selectionStart = -1;
     selectionEnd = -1;
-    updateSelectionStatus();
     return false;
 };
 //setInterval(function() { a = (a + 1) % m; buildAnswer(); render(); }, 1000);
 
-function update() { render(); window.requestAnimationFrame(update); }
+function update() { updateSelectionStatus(); render(); window.requestAnimationFrame(update); }
 update();
         </script>
     </body>
