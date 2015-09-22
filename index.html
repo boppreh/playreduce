@@ -104,6 +104,19 @@ function drawCell(row, col) {
     }
 }
 
+function isBetween(value, rangeStart, rangeEnd) {
+    if (rangeEnd < rangeStart) {
+        return isBetween(value, rangeEnd, rangeStart);
+    } else {
+        return value >= rangeStart && value <= rangeEnd;
+    }
+}
+
+function isSrcActive(row, col) {
+    var srcCol = (col - selectionCurrent) + Math.min(selectionStart, selectionEnd);
+    return srcCol >= 0 && srcCol <= m2 && board[row][srcCol].active
+}
+
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -116,32 +129,36 @@ function render() {
     context.restore();
 
     context.save();
-    for (var i = 0; i <= m2; i++) {
-        for (var j = 0; j <= m2; j++) {
+    var start = Math.min(selectionStart, selectionEnd);
+    var end = Math.max(selectionStart, selectionEnd);
+    for (var row = 0; row <= m2; row++) {
+        for (var col = 0; col <= m2; col++) {
             context.globalAlpha = 1;
-            drawCell(i, j);
+            drawCell(row, col);
 
-            var cell = board[i][j];
-            var x = cellX(j);
-            var y = cellY(i);
-            if (cell.primarySelection) {
-                context.fillStyle = '#EEE';
-                context.globalAlpha = cell.active ? 1 : 0.2;
-                context.beginPath();
-                context.moveTo(x+cellBorder+cellPadding, y+cellBorder);
-                context.lineTo(x+cellSize-cellBorder+cellPadding, y+cellBorder);
-                context.lineTo(x+cellBorder+cellPadding, y+cellSize-cellBorder);
-                context.fill();
-            }
-
-            if (cell.secondarySelection) {
-                context.fillStyle = '#EEE';
-                context.globalAlpha = cell.secondaryActive ? 0.9 : 0.1;
-                context.beginPath();
-                context.moveTo(x+cellPadding+cellSize-cellBorder, y+cellSize-cellBorder);
-                context.lineTo(x+cellPadding+cellSize-cellBorder, y+cellBorder);
-                context.lineTo(x+cellPadding+cellBorder, y+cellSize-cellBorder);
-                context.fill();
+            var cell = board[row][col];
+            var x = cellX(col);
+            var y = cellY(row);
+            if (selectionStart !== -1) {
+                if ((selectionEnd === -1 && isBetween(col, selectionStart, selectionCurrent)) ||
+                    (selectionEnd >= 0 && isBetween(col, selectionStart, selectionEnd))) {
+                    context.fillStyle = '#EEE';
+                    context.globalAlpha = cell.active ? 1 : 0.2;
+                    context.beginPath();
+                    context.moveTo(x+cellBorder+cellPadding, y+cellBorder);
+                    context.lineTo(x+cellSize-cellBorder+cellPadding, y+cellBorder);
+                    context.lineTo(x+cellBorder+cellPadding, y+cellSize-cellBorder);
+                    context.fill();
+                }
+                if (selectionEnd >= 0 && isBetween(col, selectionCurrent, selectionCurrent + Math.abs(selectionEnd - selectionStart))) {
+                    context.fillStyle = '#EEE';
+                    context.globalAlpha = isSrcActive(row, col) ? 0.9 : 0.1;
+                    context.beginPath();
+                    context.moveTo(x+cellPadding+cellSize-cellBorder, y+cellSize-cellBorder);
+                    context.lineTo(x+cellPadding+cellSize-cellBorder, y+cellBorder);
+                    context.lineTo(x+cellPadding+cellBorder, y+cellSize-cellBorder);
+                    context.fill();
+                }
             }
         }
     }
@@ -158,10 +175,9 @@ if (urlParam) {
 }
 buildBoard();
 
-var selecting = false;
 var selectionStart = -1;
 var selectionEnd = -1;
-var secondarySelectionStart = -1;
+var selectionCurrent = -1;
 
 function testVictory() {
     for (var row = 0; row <= m2; row++) {
@@ -176,40 +192,6 @@ function testVictory() {
     a = (Math.random()*(m-1) + 1)|0;
     buildBoard();
 }
-
-function updateSelectionStatus() {
-    var selectionType;
-
-    var start, end;
-    if (selecting) {
-        selectionType = 'primary';
-        start = Math.min(selectionStart, selectionEnd);
-        end = Math.max(selectionStart, selectionEnd);
-    } else if (selectionStart !== -1) {
-        selectionType = 'secondary';
-        start = secondarySelectionStart;
-        end = start + Math.abs(selectionStart - selectionEnd);
-    } else {
-        selectionType = 'none';
-    }
-
-    for (var row = 0; row <= m2; row++) {
-        for (var col = 0; col <= m2; col++) {
-            var inRange = col >= start && col <= end;
-            if (selectionType == 'primary') {
-                board[row][col].primarySelection = inRange;
-            } else if (selectionType == 'secondary') {
-                board[row][col].secondarySelection = inRange;
-                var distance = col - start;
-                var src = Math.min(selectionStart, selectionEnd) + distance;
-                board[row][col].secondaryActive = (src >= 0 && src <= m2) && board[row][src].active;
-            } else {
-                board[row][col].primarySelection = false;
-                board[row][col].secondarySelection = false;
-            }
-        }
-    }
-}
 canvas.onmousedown = function(e) {
     if (e.which === 3) {
         return;
@@ -217,40 +199,34 @@ canvas.onmousedown = function(e) {
      
     var col = colX(e.clientX);
     if (selectionStart === -1) {
-        selecting = true;
         selectionStart = col;
-        selectionEnd = col;
-    } else if (selectionStart != col && selectionEnd != col) {
-        for (var i = 0; i <= Math.abs(selectionEnd - selectionStart); i++) {
-            var col = secondarySelectionStart + i;
-            if (col < 0 || col > m2) {
-                continue;
-            }
-            for (var row = 0; row <= m2; row++) {
-                board[row][col].active ^= board[row][col].secondaryActive;
+    } else {
+        var start = Math.min(selectionStart, selectionEnd);
+        if (start == selectionCurrent) {
+            return;
+        }
+        var end = Math.min(selectionStart, selectionEnd);
+        for (var col = selectionCurrent; col <= selectionCurrent + (end - start); col++) {
+            if (col >= 0 && col <= m2) {
+                for (var row = 0; row <= m2; row++) {
+                    board[row][col].active ^= isSrcActive(row, col);
+                }
             }
         }
-        selecting = false;
         if (!e.shiftKey) {
             selectionStart = -1;
             selectionEnd = -1;
         }
+        setTimeout(testVictory, 1000)
     }
-    setTimeout(testVictory, 1000)
 };
 canvas.onmouseup = function(e) {
-    if (selecting) {
-        selecting = false;
-        selectionEnd = colX(e.clientX);
-        secondarySelectionStart = colX(e.clientX);
+    if (selectionStart !== -1 && selectionEnd === -1) {
+        selectionEnd = selectionCurrent;
     }
 };
 canvas.onmousemove = function(e) {
-    if (selecting) {
-        selectionEnd = colX(e.clientX);
-    } else if (selectionStart !== -1) {
-        secondarySelectionStart = colX(e.clientX);
-    }
+    selectionCurrent = colX(e.clientX);
 };
 canvas.onwheel = function(e) {
     if (e.shiftKey) {
@@ -270,7 +246,7 @@ canvas.oncontextmenu = function(e) {
 };
 //setInterval(function() { a = (a + 1) % m; buildAnswer(); render(); }, 1000);
 
-function update() { updateSelectionStatus(); render(); window.requestAnimationFrame(update); }
+function update() { render(); window.requestAnimationFrame(update); }
 update();
         </script>
     </body>
