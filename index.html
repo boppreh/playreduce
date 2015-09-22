@@ -91,11 +91,13 @@ function drawCell(row, col) {
     } else if (cell.active) {
         context.fillStyle = '#CC3333';
     }
-    context.strokeStyle = '#CCC';
     context.fillRect(cellX(col) + cellPadding, cellY(row),
                      cellSize, cellSize);
-    context.strokeRect(cellX(col) + cellPadding, cellY(row),
-                       cellSize, cellSize);
+    if (cellSpace > 10) {
+        context.strokeStyle = '#CCC';
+        context.strokeRect(cellX(col) + cellPadding, cellY(row),
+                           cellSize, cellSize);
+    }
 }
 
 function render() {
