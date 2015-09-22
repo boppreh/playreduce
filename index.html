@@ -79,6 +79,25 @@ function isCorrect(row, col) {
     return row >= col && (row == col || (row >= m && xoredA ^ xored0));
 }
 
+function drawCell(row, col) {
+    var correct = isCorrect(row, col);
+    var cell = board[row][col];
+    if (!correct && !cell.active) {
+        return;
+    }
+
+    if (correct) {
+        context.fillStyle = cell.active ? '#33DD33' : '#459990';
+    } else if (cell.active) {
+        context.fillStyle = '#CC3333';
+    }
+    context.strokeStyle = '#CCC';
+    context.fillRect(cellX(col) + cellPadding, cellY(row),
+                     cellSize, cellSize);
+    context.strokeRect(cellX(col) + cellPadding, cellY(row),
+                       cellSize, cellSize);
+}
+
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -94,19 +113,9 @@ function render() {
     for (var i = 0; i <= m2; i++) {
         for (var j = 0; j <= m2; j++) {
             context.globalAlpha = 1;
+            drawCell(i, j);
 
-            context.fillStyle = '#CCC';
-            context.fillRect(cellX(j), cellY(i) - cellPadding,
-                             cellSpace, cellSpace+1);
             var cell = board[i][j];
-            if (isCorrect(i, j)) {
-                context.fillStyle = cell.active ? '#33DD33' : '#459990';
-            } else {
-                context.fillStyle = cell.active ? '#CC3333' : '#456990';
-            }
-            context.fillRect(cellX(j) + cellPadding, cellY(i),
-                             cellSize, cellSize);
-
             if (cell.primarySelection) {
                 context.fillStyle = '#EEE';
                 context.globalAlpha = cell.active ? 1 : 0.2;
