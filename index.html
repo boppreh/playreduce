@@ -301,7 +301,13 @@ window.onkeydown = function(e) {
 function update() { render(); window.requestAnimationFrame(update); }
 update();
 
+var running = false;
+var ttl = Infinity;
 function merge(fromStart, b, c) {
+    if (ttl-- <= 0) {
+        throw "stop";
+    }
+
     var to, fromEnd;
     if (c === undefined) {
         fromEnd = fromStart;
@@ -322,17 +328,39 @@ function merge(fromStart, b, c) {
             board[row][to + i] ^= board[row][fromStart + i];
         }
     }
+
+    selectionStart = fromStart;
+    selectionEnd = fromEnd;
+    selectionCurrent = to;
 }
 
-function runUserAlgorithm() {
-    buildBoard();
+var lastTtl = 0;
+function stepUserAlgorithm() {
+    if (!running) {
+        return;
+    }
 
+    buildBoard();
+    ttl = ++lastTtl;
     try {
         eval(document.getElementById('user-algorithm').value);
+        running = false;
+        selectionStart = null;
+        selectionEnd = null;
+        selectionCurrent = null;
     } catch (e) {
-        alert(e);
-        throw e;
+        if (e == "stop") {
+            setTimeout(stepUserAlgorithm, 200);
+        } else {
+            alert(e);
+            throw e;
+        }
     }
+}
+function runUserAlgorithm() {
+    running = true;
+    lastTtl = 0;
+    stepUserAlgorithm();
 }
         </script>
     </body>
