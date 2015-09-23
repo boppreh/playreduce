@@ -31,12 +31,21 @@
     </head>
     <body>
         <div id="input-div">
-            <textarea cols=30 rows=10 id="user-algorithm"></textarea>
+            <textarea cols=30 rows=10 id="user-algorithm">for (var i = m - 2; i >= 0; i--) {
+    merge(i+m, i+a);
+    merge(i+m, i);
+}</textarea>
             <div>
                 <label><input type="radio" name="size" value="bit" checked />Bit</label>
-                <label><input type="radio" name="size" value="word" checked />Word</label>
+                <label><input type="radio" name="size" value="word" />Word</label>
             </div>
-            <button onclick="runUserAlgorithm();">Apply</button>
+            <div id="start-controls">
+                <button onclick="runUserAlgorithm();">Apply</button>
+            </div>
+            <div id="running-controls" style="display: none;">
+                <button id="btn-play-pause" onclick="playPauseUserAlgorithm();">Pause</button>
+                <button onclick="stopUserAlgorithm();">Stop</button>
+            </div>
         </div>
         <canvas></canvas>
         <script>
@@ -321,9 +330,9 @@ function merge(fromStart, b, c) {
     if (fromEnd < fromStart || fromStart < 0 || fromStart > m2 || fromEnd > m2 || to < 0 || to + distance > m2) {
         throw "Invalid parameters fromStart " + fromStart + ", fromEnd " + fromEnd + ", to " + to;
     }
+    rangeCount++;
     for (var i = 0; i <= distance; i++) {
         bitCount++;
-        rangeCount++;
         for (var row = 0; row <= m2; row++) {
             board[row][to + i] ^= board[row][fromStart + i];
         }
@@ -344,13 +353,10 @@ function stepUserAlgorithm() {
     ttl = ++lastTtl;
     try {
         eval(document.getElementById('user-algorithm').value);
-        running = false;
-        selectionStart = null;
-        selectionEnd = null;
-        selectionCurrent = null;
+        stopUserAlgorithm();
     } catch (e) {
         if (e == "stop") {
-            setTimeout(stepUserAlgorithm, 200);
+            setTimeout(stepUserAlgorithm, (1000 * 10 / m2)|0);
         } else {
             alert(e);
             throw e;
@@ -361,6 +367,23 @@ function runUserAlgorithm() {
     running = true;
     lastTtl = 0;
     stepUserAlgorithm();
+    document.getElementById('start-controls').style.display = 'none';
+    document.getElementById('running-controls').style.display = 'block';
+}
+function playPauseUserAlgorithm() {
+    running = !running;
+    document.getElementById('btn-play-pause').innerHTML = running ? 'Pause' : 'Play';
+    if (running) {
+        stepUserAlgorithm();
+    }
+}
+function stopUserAlgorithm() {
+    selectionStart = null;
+    selectionEnd = null;
+    selectionCurrent = null;
+    running = false; 
+    document.getElementById('start-controls').style.display = 'block';
+    document.getElementById('running-controls').style.display = 'none';
 }
         </script>
     </body>
