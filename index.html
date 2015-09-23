@@ -11,15 +11,33 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
+            font: 16px sans-serif;
+            color: #CCC;
         }
         canvas {
             width: 100%;
             height: 100%;
             background-color: #456990;
         }
+        #input-div {
+            padding: 10px;
+            position: fixed;
+            background-color: #426487;
+            display: flex;
+            flex-direction: column;
+            /*visibility: hidden;*/
+        }
         </style>
     </head>
     <body>
+        <div id="input-div">
+            <textarea cols=30 rows=10 id="user-algorithm"></textarea>
+            <div>
+                <label><input type="radio" name="size" value="bit" checked />Bit</label>
+                <label><input type="radio" name="size" value="word" checked />Word</label>
+            </div>
+            <button onclick="runUserAlgorithm();">Apply</button>
+        </div>
         <canvas></canvas>
         <script>
 "use strict";
@@ -33,7 +51,8 @@ function buildBoard() {
     selectionStart = selectionEnd = selectionCurrent = selectionCurrentRow = null;
     bitCount = rangeCount = 0;
     m = Math.max(2, m);
-    a = Math.max(1, Math.min(m-1, a));
+
+    a = Math.max(1, Math.min(m-1, a));  
     m2 = 2 * m - 2;
     board = [];
     for (var i = 0; i <= m2; i++) {
@@ -281,6 +300,40 @@ window.onkeydown = function(e) {
 
 function update() { render(); window.requestAnimationFrame(update); }
 update();
+
+function merge(fromStart, b, c) {
+    var to, fromEnd;
+    if (c === undefined) {
+        fromEnd = fromStart;
+        to = b;
+    } else {
+        fromEnd = b;
+        to = c;
+    }
+
+    var distance = fromEnd - fromStart;
+    if (fromEnd < fromStart || fromStart < 0 || fromStart > m2 || fromEnd > m2 || to < 0 || to + distance > m2) {
+        throw "Invalid parameters fromStart " + fromStart + ", fromEnd " + fromEnd + ", to " + to;
+    }
+    for (var i = 0; i <= distance; i++) {
+        bitCount++;
+        rangeCount++;
+        for (var row = 0; row <= m2; row++) {
+            board[row][to + i] ^= board[row][fromStart + i];
+        }
+    }
+}
+
+function runUserAlgorithm() {
+    buildBoard();
+
+    try {
+        eval(document.getElementById('user-algorithm').value);
+    } catch (e) {
+        alert(e);
+        throw e;
+    }
+}
         </script>
     </body>
 </html>
