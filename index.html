@@ -35,10 +35,6 @@
     merge(i+m, i+a);
     merge(i+m, i);
 }</textarea>
-            <div>
-                <label><input type="radio" name="size" value="bit" checked />Bit</label>
-                <label><input type="radio" name="size" value="word" />Word</label>
-            </div>
             <div id="start-controls">
                 <button onclick="runUserAlgorithm();">Apply</button>
             </div>
@@ -57,6 +53,7 @@ var context = canvas.getContext('2d');
 var m, a, m2;
 var board;
 function buildBoard() {
+    stopUserAlgorithm();
     selectionStart = selectionEnd = selectionCurrent = selectionCurrentRow = null;
     bitCount = rangeCount = 0;
     m = Math.max(2, m);
@@ -344,12 +341,83 @@ function merge(fromStart, b, c) {
 }
 
 var lastTtl = 0;
+var words = [];
+var W = 32;
+function xor(wordDst, values) {
+    for (var i = 0; i < W; i++) {
+        var index = values[i];
+        if (index !== null) {
+            if (index < 0 || index > m2) {
+                throw "Invalid XOR index " + index;
+            }
+            merge(index, wordDst * W + i);
+        }
+    }
+}
+function mask(values, mask) {
+    var result = [] ;
+    for (var i = 0; i < W; i++) {
+        result[i] = mask % 2 == 1 ? values[i] : null;
+        mask = (mask/2)|0; 
+    }
+    return result;
+}
+function lshift(values, amount) {
+    if (amount < 0) {
+        return rshift(values, -amount);
+    }
+    var result = [];
+    for (var i = 0; i < amount; i++) {
+        result.push(null);
+    }
+    for (var i = amount; i < W; i++) {
+        result.push(values[i - amount]);
+    }
+    return result;
+}
+function rshift(values, amount) {
+    if (amount < 0) {
+        return lshift(values, -amount);
+    }
+    var result = [];
+    for (var i = 0; i < W - amount; i++) {
+        result.push(values[i + amount]);
+    }
+    for (var i = W - amount; i < W; i++) {
+        result.push(null);
+    }
+    return result;
+}
+function or(left, right) {
+    var result = [];
+    for (var i = 0; i < W; i++) {
+        result.push(left[i] !== null ? left[i] : right[i]);
+    }
+    return result;
+}
 function stepUserAlgorithm() {
     if (!running) {
         return;
     }
 
-    buildBoard();
+    words = [];
+    for (var i = 0; i <= m2/W; i++) {
+        words.push([]);
+        for (var j = 0; j < W; j++) {
+            var index = j + i * W
+            words[i][j] = index <= m2 ? index : null;
+        }
+    }
+    var C = words;
+
+    rangeCount = 0;
+    bitCount = 0;
+    for (var row = 0; row <= m2; row++) {
+        for (var col = 0; col <= m2; col++) {
+            board[row][col] = row == col;
+        }
+    }
+
     ttl = ++lastTtl;
     try {
         eval(document.getElementById('user-algorithm').value);
@@ -360,15 +428,16 @@ function stepUserAlgorithm() {
         } else {
             alert(e);
             throw e;
+            stopUserAlgorithm();
         }
     }
 }
 function runUserAlgorithm() {
     running = true;
     lastTtl = 0;
-    stepUserAlgorithm();
     document.getElementById('start-controls').style.display = 'none';
     document.getElementById('running-controls').style.display = 'block';
+    stepUserAlgorithm();
 }
 function playPauseUserAlgorithm() {
     running = !running;
