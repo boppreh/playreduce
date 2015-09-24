@@ -40,6 +40,7 @@
             </div>
             <div id="running-controls" style="display: none;">
                 <button id="btn-play-pause" onclick="playPauseUserAlgorithm();">Pause</button>
+                <button onclick="running = true; stepUserAlgorithm(); running=false;">Step</button>
                 <button onclick="stopUserAlgorithm();">Stop</button>
             </div>
         </div>
@@ -78,7 +79,7 @@ function updateDimensions() {
     canvas.height = window.innerHeight;
 
     canvasPadding = canvas.height / 20;
-    cellSpace = ((Math.min(canvas.width, canvas.height) - 2 * canvasPadding) / (m2+1))|0;
+    cellSpace = (Math.min(canvas.width, canvas.height) - 2 * canvasPadding) / (m2+1);
     if (cellSpace > 10) {
         cellPadding = Math.max(1, (cellSpace / 20)|0);
     } else {
@@ -92,7 +93,7 @@ function updateDimensions() {
 
 window.onresize = updateDimensions;
 function cellY(row) { return canvasPadding + row * cellSpace; }
-function cellX(col) { return (canvas.width/2 + (col-(m2+1)/2)*cellSpace)|0; }
+function cellX(col) { return canvas.width/2 + (col-(m2+1)/2)*cellSpace; }
 function rowY(y) { return Math.round((y - canvasPadding) / cellSpace - 0.5); }
 function colX(x) { return Math.round((x - canvas.width/2) / cellSpace + (m2+1)/2 - 0.5); }
 function isCorrect(row, col) {
@@ -146,6 +147,14 @@ function render() {
     if (selectionCurrent >= 0 && selectionCurrent <= m2 && selectionCurrentRow >= 0 && selectionCurrentRow <= m2) {
         context.fillRect(cellX(selectionCurrent), 0, cellSpace, canvas.height);
         context.fillRect(0, cellY(selectionCurrentRow), canvas.width, cellSpace);
+    }
+    context.restore();
+
+    context.save();
+    context.fillStyle = '#426687';
+    for (var i = 0; i <= Math.ceil(m2/W); i++) {
+        context.fillRect(cellX(i * W), 0, cellSpace, canvas.height);
+        context.fillRect(0, cellY(i * W), canvas.width, cellSpace);
     }
     context.restore();
 
@@ -308,7 +317,7 @@ function update() { render(); window.requestAnimationFrame(update); }
 update();
 
 var running = false;
-var ttl = Infinity;
+var ttl;
 function merge(fromStart, b, c) {
     if (ttl-- <= 0) {
         throw "stop";
@@ -435,13 +444,15 @@ function stepUserAlgorithm() {
         stopUserAlgorithm();
     } catch (e) {
         if (e == "stop") {
-            setTimeout(stepUserAlgorithm, (1000 * 10 / m2)|0);
+            setTimeout(stepUserAlgorithm, 200);
         } else {
             alert(e);
             throw e;
             stopUserAlgorithm();
         }
     }
+
+    ttl = Infinity;
 }
 function runUserAlgorithm() {
     running = true;
