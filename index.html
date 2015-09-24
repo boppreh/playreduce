@@ -344,14 +344,25 @@ var lastTtl = 0;
 var words = [];
 var W = 32;
 function xor(wordDst, values) {
-    for (var i = 0; i < W; i++) {
-        var index = values[i];
-        if (index !== null) {
-            if (index < 0 || index > m2) {
-                throw "Invalid XOR index " + index;
-            }
-            merge(index, wordDst * W + i);
+    var groups = [];
+    for (var i = 0; i < values.length; i++) {
+        if (values[i] === null) {
+            continue;
         }
+
+        var lastGroup = groups[groups.length-1];
+        if (lastGroup !== undefined && i === lastGroup[1] + 1 && values[i] === values[lastGroup[1]] + 1) {
+            lastGroup[1]++;
+        } else {
+            groups.push([i, i]);
+        }
+    }
+    
+    for (var i = 0; i < groups.length; i++) {
+        var group = groups[i];
+        var start = group[0];
+        var end = group[1];
+        merge(values[start], values[end], words[wordDst][start]);
     }
 }
 function mask(values, mask) {
