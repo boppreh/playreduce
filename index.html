@@ -280,12 +280,13 @@ canvas.onmousemove = function(e) {
     selectionCurrentRow = rowY(e.clientY);
 };
 canvas.onwheel = function(e) {
+    var delta = (e.deltaY || e.deltaX) < 0 ? 1 : -1;
     if (e.shiftKey) {
-        m = Math.max(2, Math.min(100, m + (e.deltaY < 0 ? 1 : -1)));
+        m = Math.max(2, Math.min(100, m + delta));
         a = Math.max(1, Math.min(m - 1, a));
         buildBoard();
     } else {
-        a = Math.max(1, Math.min(m - 1, a + (e.deltaY < 0 ? 1 : -1)));
+        a = Math.max(1, Math.min(m - 1, a + delta));
     }
     return false;
 };
@@ -408,7 +409,7 @@ function rshift(values, amount) {
     }
     return result;
 }
-function or(left, right) {
+function lor(left, right) {
     var result = [];
     for (var i = 0; i < W; i++) {
         result.push(left[i] !== null ? left[i] : right[i]);
